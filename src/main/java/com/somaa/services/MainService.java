@@ -7,7 +7,13 @@ package com.somaa.services;
 
 import com.somaa.entities.User;
 import com.somaa.repos.UserRepo;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+
 import java.util.List;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -36,6 +42,8 @@ public class MainService {
     @Autowired
     EntityManager em;
 
+    public static Map<String, String> input;
+
     @PostConstruct
     public void init() {
         User user1 = new User("isma", 2000);
@@ -46,6 +54,9 @@ public class MainService {
         userRepo.save(user2);
         userRepo.save(user3);
         userRepo.save(user4);
+        input=new HashMap<>();
+        input.put("name", "isma");
+        input.put("salary", "2000");
     }
 
     public ResponseEntity<?> doTask(int option) {
@@ -61,6 +72,12 @@ public class MainService {
             }
             case 4: {
                 return ResponseEntity.ok(find4());
+            }
+             case 5: {
+                return ResponseEntity.ok(find5());
+            }
+             case 6: {
+                return ResponseEntity.ok(find6());
             }
             default: {
                 return null;
@@ -89,11 +106,11 @@ public class MainService {
     }
 
     private List<User> find3() {
-   CriteriaBuilder cb = this.em.getCriteriaBuilder();
+        CriteriaBuilder cb = this.em.getCriteriaBuilder();
 
         // create update
         CriteriaUpdate<User> update = cb.
-        createCriteriaUpdate(User.class);
+                createCriteriaUpdate(User.class);
 
         // set the root class
         Root e = update.from(User.class);
@@ -124,4 +141,47 @@ public class MainService {
         return null;
     }
 
+    private List<User> find5() {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<User> query = builder.createQuery(User.class);
+        Root<User> root = query.from(User.class);
+        List<Predicate> pre = new ArrayList<Predicate>();
+        input.forEach((k, v) -> {
+            Predicate p = builder.equal(root.get(k), v);
+            pre.add(p);
+        });
+        if (pre.size() > 0) {
+            Predicate[] pArray = pre.toArray(new Predicate[]{});
+            Predicate predicate = builder.and(pArray);
+            query.where(predicate);
+        }
+        return em.createQuery(query.select(root)).getResultList();
+    }
+    
+    
+    private Object find6() {
+       return genericQuery(User.class);
+    }
+    
+    
+    
+    public <T> List<T> genericQuery(Class<T> type){
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<T> query = builder.createQuery(type);
+        Root<T> root = query.from(type);
+        List<Predicate> pre = new ArrayList<Predicate>();
+        input.forEach((k, v) -> {
+            Predicate p = builder.equal(root.get(k), v);
+            pre.add(p);
+        });
+        if (pre.size() > 0) {
+            Predicate[] pArray = pre.toArray(new Predicate[]{});
+            Predicate predicate = builder.and(pArray);
+            query.where(predicate);
+        }
+        return em.createQuery(query.select(root)).getResultList();
+    
+    }
+    
+    
 }
